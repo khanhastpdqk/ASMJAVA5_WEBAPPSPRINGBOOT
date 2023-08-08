@@ -3,23 +3,25 @@ package com.demo.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.*;
-import java.io.Serializable;
 
 @Data
-@Entity
-@Table(name = "Orderdetails")
 @AllArgsConstructor
-@NoArgsConstructor
-public class OrderDetail implements Serializable {
+@Entity
+@Table(name="CartDetail")
+@NoArgsConstructor @ToString
+public class CartDetail {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     Long id;
-    Integer price;
     Integer quantity;
+    Integer price;
     @ManyToOne @JoinColumn(name = "Productid")
     Product product;
-    @ManyToOne @JoinColumn(name = "Orderid")
-    Order order;
+    @ManyToOne @JoinColumn(name = "Cartid")
+    Cart cart;
 }

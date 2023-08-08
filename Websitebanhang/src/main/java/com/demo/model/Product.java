@@ -10,7 +10,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -38,6 +37,8 @@ public class Product {
     @Valid Category category;
     @OneToMany(mappedBy = "product")
     List<OrderDetail> orderDetails;
+    @OneToMany(mappedBy = "product")
+    List<CartDetail> cartDetails;
 
     // TODO: List<OrderDetail>
 }

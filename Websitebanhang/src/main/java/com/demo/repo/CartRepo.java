@@ -1,10 +1,9 @@
 package com.demo.repo;
 
-import com.demo.model.Order;
+import com.demo.model.Cart;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-// TODO
-public interface OrderRepo extends JpaRepository<Order,Long> {
+public interface CartRepo extends JpaRepository<Cart,Long> {
 }

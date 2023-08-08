@@ -1,13 +1,7 @@
 package com.demo.controller;
 
-import com.demo.model.Account;
-import com.demo.model.Product;
-import com.demo.repo.AccountRepo;
-import com.demo.repo.CategoryRepo;
-import com.demo.repo.ProductRepo;
-import com.demo.service.CartService;
-import com.demo.service.CategoryService;
-import com.demo.service.ProductService;
+import com.demo.model.*;
+import com.demo.repo.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,28 +13,21 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 @Controller
 public class UserController {
 	@Autowired
 	HttpSession session;
-
 	@Autowired
-	CategoryService categoryService;
-
+	CartRepo cartRepo;
 	@Autowired
-	ProductService productService;
+	CartDetailRepo cartDetailRepo;
 
-	@Autowired
-	CartService cart;
 
-	@ModelAttribute("cart")
-	CartService getCart(){
-		return cart;
-	}
+
 
 	@Data @AllArgsConstructor
 	public static class PriceRange{
@@ -81,7 +68,7 @@ public class UserController {
 
 		Pageable pageable = PageRequest.of(p,6);
 //        Page<Product> page = repo.findByKeywords("%"+keywords+"%",pageable);
-		model.addAttribute("page", productService.getAll());
+		model.addAttribute("page", productRepo.findAll());
 		// TODO: Search & paginate
 		if(!categoryId.isEmpty()){
 			//co cate id
@@ -108,33 +95,93 @@ public class UserController {
 	}
 
 	@RequestMapping("/add-to-cart/{id}")
-	public String addToCart(@PathVariable int id){
-		cart.add(id);
-		return "redirect:/cart";
-	}
+	public String addToCart(@PathVariable int id,Model model){
+		Product product = productRepo.findById(id).get();
+		//tim ra sp
+		CartDetail cartDetail = new CartDetail();
+		// tao ra 1 gio hang trong
+		cartDetail.setProduct(product);
+		cartDetail.setPrice(product.getPrice());
+		cartDetail.setQuantity(1);
+		// set data cho gio hang
+		Cart cart = (Cart) session.getAttribute("cart");
+		if(cart == null){
+			Cart cart1 = new Cart();
+			List<CartDetail> listcart = new ArrayList<>();
+			listcart.add(cartDetail);
+			cart1.setCartDetails(listcart);
+			session.setAttribute("cart",cart1);
+			System.out.println(cart1.getCartDetails().size());
+			System.out.println("chay duoc den day la 1 nua r");
 
-	@RequestMapping("/remove-cart/{id}")
-	public String removeCart(@PathVariable int id) {
-		cart.remove(id);
-		if(cart.getTotal() == 0){
-			return "redirect:/";
+		}
+		else {
+			Boolean check = false;
+			List<CartDetail> list = cart.getCartDetails();
+
+
+			for(CartDetail x:list){
+				if(x.getProduct().getId() == id){
+					check = true;
+					x.setQuantity(x.getQuantity()+1);
+				}
+			}
+
+			if(check == false) {
+				list.add(cartDetail);
+
+			}
+			cart.setCartDetails(list);
+			session.setAttribute("cart",cart);
+			System.out.println("chay lan 2 den day la ok");
+
 		}
 		return "redirect:/cart";
 	}
 
-	@RequestMapping("/update-cart/{id}")
-	public String updateCart(@PathVariable int id, int quantity) {
-		cart.update(id, quantity);
-		return "redirect:/cart";
+	@RequestMapping("/remove-cart/{id}")
+	public String removeCart(@PathVariable Integer id) {
+		Product product = productRepo.findById(id).get();
+		Cart cart = (Cart) session.getAttribute("cart");
+		if(cart==null){
+			return "redirect:/cart";
+		}else {
+			List<CartDetail> list = cart.getCartDetails();
+			List<CartDetail> list1 = new ArrayList<>();
+			for (CartDetail x : list) {
+				if (x.getProduct().getId() != id) {
+					list1.add(x);
+				}
+			}
+			cart.setCartDetails(list1);
+			session.setAttribute("cart", cart);
+			System.out.println("xoa thanh cong");
+			return "redirect:/cart";
+		}
 	}
+
 
 	@GetMapping("/cart")
-	public String cart(){
-		return "home/cart";
-	}
+	public String cart(Model model){
+			Cart cart = (Cart) session.getAttribute("cart");
+			if(cart == null){
+				session.setAttribute("message1","Bạn chưa có đồ trong giỏ hàng!");
+				return "redirect:/";
+			}else {
+				List<CartDetail> list = cart.getCartDetails();
+				int tong = list.stream().map(o -> o.getPrice() * o.getQuantity()).reduce(0, (o1, o2) -> o1 + o2);
+				model.addAttribute("tong", tong);
+				session.removeAttribute("message1");
+				return "home/cart";
+			}
 
+	}
 	@GetMapping("/confirm")
-	public String confirm(){
+	public String confirm(Model model){
+		Cart cart = (Cart) session.getAttribute("cart");
+		List<CartDetail> list = cart.getCartDetails();
+		int tong = list.stream().map(o->o.getPrice()*o.getQuantity()).reduce(0,(o1,o2)->o1+o2);
+		model.addAttribute("tong",tong);
 		return "home/confirm";
 	}
 
@@ -156,6 +203,8 @@ public class UserController {
 		Account account = accountRepo.findByUsernameAndPassword(username, password);
 			if (account!= null) {
 				session.setAttribute("username", username);
+				Boolean checkrole = account.isAdmin();
+				session.setAttribute("checkrole",checkrole);
 				System.out.println(username);
 				return "redirect:/";
 
@@ -168,16 +217,20 @@ public class UserController {
 	}
 
 	@PostMapping("/purchase")
-	public String purchase(@RequestParam String address){
+	public String purchase(@RequestParam String address,Model model){
 		System.out.println("address=" + address);
-		System.out.println("items=" + cart.getItems());
 		// TODO: Save items to database
+		Cart cart = (Cart) session.getAttribute("cart");
+		cartRepo.save(cart);
+		session.removeAttribute("cart");
+		session.setAttribute("message1","Bạn đã mua hàng đến " + address+"!");
 		return "redirect:/";
 	}
 
 	@GetMapping("/logout")
 	public String logout(){
 		session.removeAttribute("username");
+		session.removeAttribute("cart");
 		return "redirect:/login";
 	}
 	//tim kiem

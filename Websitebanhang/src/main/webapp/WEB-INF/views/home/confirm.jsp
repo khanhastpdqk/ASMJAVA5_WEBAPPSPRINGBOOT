@@ -12,8 +12,7 @@
             </tr>
         </thead>
         <tbody>
-            <c:forEach var="item" items="${cart.items}">
-                <form action="/cart/update/${item.product.id}" method="post">
+            <c:forEach var="item" items="${cart.getCartDetails()}">
                     <input type="hidden" name="id" value="${item.product.id}">
                     <tr>
                         <td>${item.product.name}</td>
@@ -21,11 +20,10 @@
                         <td>${item.quantity}</td>
                         <td>${item.price * item.quantity}</td>
                     </tr>
-                </form>
             </c:forEach>
         </tbody>
     </table>
-    <div class="my-2">Tổng số tiền: ${cart.amount}</div>
+    <div class="my-2">Tổng số tiền: ${tong}</div>
     <form method="POST" action="/purchase">
         <div>
             <label class="mb-1">Địa chỉ nhận hàng:</label>

@@ -42,6 +42,7 @@
     </div>
 
     <div class="col-9">
+      <h5>${message1}</h5>
       <ul class="list-unstyled row">
         <c:forEach var="p" items="${page.content}">
             <li class="list-item col-sm-4 mt-3">

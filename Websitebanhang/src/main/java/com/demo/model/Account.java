@@ -9,7 +9,9 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.validation.constraints.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.List;
 
@@ -29,6 +31,8 @@ public class Account  implements Serializable {
     @NotNull boolean admin;
     @OneToMany(mappedBy = "account")
     List<Order> orders;
+    @OneToMany(mappedBy = "account")
+    List<Cart> carts;
 
     //TODO
 }
